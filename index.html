@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Code & QR Generator</title>
+    <!-- QRCode.js library for QR codes -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+    <!-- JsBarcode library for Barcodes -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #0f1115;
+            --card-bg: #181b22;
+            --border-color: #272c36;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --danger: #ef4444;
+            --radius: 12px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 2rem 1rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.025em;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        /* Navigation Tabs for Code Types */
+        .nav-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .tab-btn {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-main);
+            border-color: var(--accent);
+        }
+
+        .tab-btn.active {
+            background-color: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .card h2 {
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        input[type="text"], textarea, select {
+            width: 100%;
+            background-color: #0f1115;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.75rem;
+            color: var(--text-main);
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input[type="text"]:focus, textarea:focus, select:focus {
+            border-color: var(--accent);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .color-pickers {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .color-picker-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: #0f1115;
+            border: 1px solid var(--border-color);
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+        }
+
+        input[type="color"] {
+            appearance: none;
+            border: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 4px;
+            cursor: pointer;
+            background: none;
+        }
+
+        input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+
+        input[type="color"]::-webkit-color-swatch {
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+        }
+
+        .preview-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #0f1115;
+            border: 1px dashed var(--border-color);
+            border-radius: 8px;
+            padding: 2rem;
+            min-height: 260px;
+            margin-bottom: 1.5rem;
+            position: relative;
+            overflow: auto;
+            max-width: 100%;
+        }
+
+        #output-render-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            padding: 12px;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            max-width: 100%;
+            overflow: auto;
+        }
+
+        .text-output-box {
+            width: 100%;
+            background: #0f1115;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: monospace;
+            font-size: 0.9rem;
+            word-break: break-all;
+            color: var(--text-main);
+            min-height: 120px;
+            max-height: 200px;
+            overflow-y: auto;
+            user-select: all;
+        }
+
+        .actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+
+        .btn {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-secondary {
+            background-color: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+        }
+
+        .btn-secondary:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: contents;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background-color: #22c55e;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>scan code gen</h1>
+        <p>Generate QR Codes, Barcodes, Hashes, Base64 & UUIDs instantly.</p>
+    </header>
+
+    <!-- Navigation Bar -->
+    <div class="nav-tabs">
+        <button class="tab-btn active" data-target="qr">QR Code</button>
+        <button class="tab-btn" data-target="barcode">Barcode</button>
+        <button class="tab-btn" data-target="hash">Hash Generator</button>
+        <button class="tab-btn" data-target="base64">Base64 Encoder</button>
+        <button class="tab-btn" data-target="uuid">UUID Generator</button>
+    </div>
+
+    <!-- MAIN CONTAINER -->
+    <div class="container">
+
+        <!-- ================= 1. QR CODE TAB ================= -->
+        <div id="tab-qr" class="tab-content active">
+            <div class="card">
+                <h2>QR Code Configuration</h2>
+                <div class="form-group">
+                    <label for="qr-text">Content or URL</label>
+                    <textarea id="qr-text" placeholder="https://example.com">https://google.com</textarea>
+                </div>
+                <div class="form-group">
+                    <label for="qr-style">QR Style Pattern</label>
+                    <select id="qr-style">
+                        <option value="squares">Sharp Squares</option>
+                        <option value="rounded">Smooth Rounded</option>
+                        <option value="dots">Modern Dots</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="qr-error">Error Correction Level</label>
+                    <select id="qr-error">
+                        <option value="L">Low (~7%)</option>
+                        <option value="M" selected>Medium (~15%)</option>
+                        <option value="Q">Quartile (~25%)</option>
+                        <option value="H">High (~30%)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Colors</label>
+                    <div class="color-pickers">
+                        <div class="color-picker-wrapper">
+                            <input type="color" id="qr-fg" value="#000000">
+                            <span style="font-size: 0.85rem;">Foreground</span>
+                        </div>
+                        <div class="color-picker-wrapper">
+                            <input type="color" id="qr-bg" value="#ffffff">
+                            <span style="font-size: 0.85rem;">Background</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Live Preview</h2>
+                <div class="preview-box">
+                    <div id="output-render-container"></div>
+                </div>
+                <div class="actions">
+                    <button class="btn" id="qr-download">Download PNG</button>
+                    <button class="btn btn-secondary" id="qr-copy">Copy Content</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= 2. BARCODE TAB ================= -->
+        <div id="tab-barcode" class="tab-content">
+            <div class="card">
+                <h2>Barcode Configuration</h2>
+                <div class="form-group">
+                    <label for="bc-text">Barcode Data / Number</label>
+                    <input type="text" id="bc-text" value="123456789012">
+                </div>
+                <div class="form-group">
+                    <label for="bc-format">Barcode Format</label>
+                    <select id="bc-format">
+                        <option value="CODE128" selected>CODE 128 (Universal)</option>
+                        <option value="EAN13">EAN-13</option>
+                        <option value="UPC">UPC-A</option>
+                        <option value="CODE39">CODE 39</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Bar Color</label>
+                    <div class="color-picker-wrapper" style="width: 100%;">
+                        <input type="color" id="bc-color" value="#000000">
+                        <span style="font-size: 0.85rem;">Line Color</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Live Preview</h2>
+                <div class="preview-box">
+                    <div id="output-render-container" style="background: white;">
+                        <svg id="barcode-svg"></svg>
+                    </div>
+                </div>
+                <div class="actions">
+                    <button class="btn" id="bc-download">Download SVG</button>
+                    <button class="btn btn-secondary" id="bc-copy">Copy Value</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= 3. HASH GENERATOR TAB ================= -->
+        <div id="tab-hash" class="tab-content">
+            <div class="card">
+                <h2>Hash Inputs</h2>
+                <div class="form-group">
+                    <label for="hash-input-text">Text to Hash</label>
+                    <textarea id="hash-input-text" placeholder="Type text to hash securely...">Hello World</textarea>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Generated Hashes</h2>
+                <div class="form-group">
+                    <label>MD5 Hash</label>
+                    <div class="text-output-box" id="hash-md5">Loading...</div>
+                </div>
+                <div class="form-group">
+                    <label>SHA-256 Hash</label>
+                    <div class="text-output-box" id="hash-sha256">Loading...</div>
+                </div>
+                <div class="actions" style="grid-template-columns: 1fr;">
+                    <button class="btn" id="hash-copy">Copy All Hashes</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= 4. BASE64 TAB ================= -->
+        <div id="tab-base64" class="tab-content">
+            <div class="card">
+                <h2>Base64 Encoder / Decoder</h2>
+                <div class="form-group">
+                    <label for="b64-mode">Operation Mode</label>
+                    <select id="b64-mode">
+                        <option value="encode">Encode to Base64</option>
+                        <option value="decode">Decode from Base64</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="b64-input">Input Data</label>
+                    <textarea id="b64-input" placeholder="Enter text here...">Hello World</textarea>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Result Output</h2>
+                <div class="form-group">
+                    <label>Converted Output</label>
+                    <div class="text-output-box" id="b64-output">SGVsbG8gV29ybGQ=</div>
+                </div>
+                <div class="actions" style="grid-template-columns: 1fr;">
+                    <button class="btn" id="b64-copy">Copy Output</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= 5. UUID TAB ================= -->
+        <div id="tab-uuid" class="tab-content">
+            <div class="card">
+                <h2>UUID / GUID Generator</h2>
+                <div class="form-group">
+                    <label for="uuid-version">UUID Version</label>
+                    <select id="uuid-version">
+                        <option value="v4" selected>Version 4 (Random)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="uuid-count">Batch Quantity</label>
+                    <select id="uuid-count">
+                        <option value="1">Single UUID</option>
+                        <option value="5">Batch of 5</option>
+                        <option value="10">Batch of 10</option>
+                    </select>
+                </div>
+                <div class="actions" style="grid-template-columns: 1fr; margin-top: 2rem;">
+                    <button class="btn" id="uuid-generate-btn">Generate New UUIDs</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>UUID Output</h2>
+                <div class="form-group">
+                    <label>Generated Result</label>
+                    <div class="text-output-box" id="uuid-output" style="font-size: 1rem; line-height: 1.6;">Click generate to create unique identifiers.</div>
+                </div>
+                <div class="actions" style="grid-template-columns: 1fr;">
+                    <button class="btn btn-secondary" id="uuid-copy">Copy UUIDs</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="toast">Action successful!</div>
+
+    <!-- Simple MD5 Library CDN for reliable hash calculations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/blueimp-md5/2.19.0/js/md5.min.js"></script>
+
+    <script>
+        // --- Tab Switching Logic ---
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                tabBtns.forEach(b => b.classList.remove('active'));
+                tabContents.forEach(c => c.classList.remove('active'));
+                
+                btn.classList.add('active');
+                const targetId = 'tab-' + btn.getAttribute('data-target');
+                document.getElementById(targetId).classList.add('active');
+                
+                // Trigger render on switch if needed
+                triggerActiveTabRender();
+            });
+        });
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2500);
+        }
+
+        // --- 1. QR Code Logic ---
+        const qrText = document.getElementById('qr-text');
+        const qrStyle = document.getElementById('qr-style');
+        const qrError = document.getElementById('qr-error');
+        const qrFg = document.getElementById('qr-fg');
+        const qrBg = document.getElementById('qr-bg');
+        
+        function renderQRCode() {
+            const container = document.querySelector('#tab-qr #output-render-container');
+            if (!container) return;
+            container.innerHTML = '';
+
+            try {
+                const text = qrText.value.trim() || 'https://example.com';
+                const qr = qrcode(0, qrError.value);
+                qr.addData(text);
+                qr.make();
+
+                const moduleCount = qr.getModuleCount();
+                const tileSize = 8;
+                const quietZone = 4;
+                const totalModules = moduleCount + quietZone * 2;
+                const size = totalModules * tileSize;
+
+                const canvas = document.createElement('canvas');
+                canvas.width = size;
+                canvas.height = size;
+                const ctx = canvas.getContext('2d');
+
+                ctx.fillStyle = qrBg.value;
+                ctx.fillRect(0, 0, size, size);
+
+                ctx.fillStyle = qrFg.value;
+                for (let r = 0; r < moduleCount; r++) {
+                    for (let c = 0; c < moduleCount; c++) {
+                        if (qr.isDark(r, c)) {
+                            const x = (c + quietZone) * tileSize;
+                            const y = (r + quietZone) * tileSize;
+
+                            if (qrStyle.value === 'rounded') {
+                                ctx.beginPath();
+                                ctx.roundRect(x, y, tileSize, tileSize, tileSize * 0.35);
+                                ctx.fill();
+                            } else if (qrStyle.value === 'dots') {
+                                ctx.beginPath();
+                                ctx.arc(x + tileSize / 2, y + tileSize / 2, tileSize * 0.42, 0, Math.PI * 2);
+                                ctx.fill();
+                            } else {
+                                ctx.fillRect(x, y, tileSize, tileSize);
+                            }
+                        }
+                    }
+                }
+                container.appendChild(canvas);
+            } catch(e) {
+                container.innerHTML = '<span style="color:red; font-size:0.85rem;">Input data too long</span>';
+            }
+        }
+
+        [qrText, qrStyle, qrError, qrFg, qrBg].forEach(el => {
+            el.addEventListener('input', renderQRCode);
+        });
+
+        document.getElementById('qr-download').addEventListener('click', () => {
+            const canvas = document.querySelector('#tab-qr canvas');
+            if (!canvas) return;
+            const link = document.createElement('a');
+            link.download = 'qrcode.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            showToast('QR Code downloaded!');
+        });
+
+        document.getElementById('qr-copy').addEventListener('click', () => {
+            navigator.clipboard.writeText(qrText.value).then(() => {
+                showToast('QR content copied to clipboard!');
+            });
+        });
+
+        // --- 2. Barcode Logic ---
+        const bcText = document.getElementById('bc-text');
+        const bcFormat = document.getElementById('bc-format');
+        const bcColor = document.getElementById('bc-color');
+
+        function renderBarcode() {
+            try {
+                const text = bcText.value.trim() || '123456';
+                JsBarcode("#barcode-svg", text, {
+                    format: bcFormat.value,
+                    lineColor: bcColor.value,
+                    width: 2,
+                    height: 90,
+                    displayValue: true
+                });
+            } catch(e) {
+                console.error("Barcode generation error:", e);
+            }
+        }
+
+        [bcText, bcFormat, bcColor].forEach(el => {
+            el.addEventListener('input', renderBarcode);
+            el.addEventListener('change', renderBarcode);
+        });
+
+        document.getElementById('bc-download').addEventListener('click', () => {
+            const svg = document.getElementById('barcode-svg');
+            const serializer = new XMLSerializer();
+            const svgStr = serializer.serializeToString(svg);
+            const blob = new Blob([svgStr], { type: 'image/svg+xml' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.download = 'barcode.svg';
+            link.href = url;
+            link.click();
+            showToast('Barcode SVG downloaded!');
+        });
+
+        document.getElementById('bc-copy').addEventListener('click', () => {
+            navigator.clipboard.writeText(bcText.value).then(() => {
+                showToast('Barcode value copied!');
+            });
+        });
+
+        // --- 3. Hash Generator Logic ---
+        const hashInputText = document.getElementById('hash-input-text');
+        const hashMd5Out = document.getElementById('hash-md5');
+        const hashSha256Out = document.getElementById('hash-sha256');
+
+        async function updateHashes() {
+            const text = hashInputText.value;
+            // MD5 via library
+            try {
+                hashMd5Out.textContent = md5(text);
+            } catch(e) { hashMd5Out.textContent = 'Error calculating MD5'; }
+
+            // SHA-256 via Web Crypto API
+            try {
+                const msgUint8 = new TextEncoder().encode(text);
+                const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+                hashSha256Out.textContent = hashHex;
+            } catch(e) {
+                hashSha256Out.textContent = 'Web Crypto API unavailable';
+            }
+        }
+
+        hashInputText.addEventListener('input', updateHashes);
+
+        document.getElementById('hash-copy').addEventListener('click', () => {
+            const combined = `MD5: ${hashMd5Out.textContent}\nSHA-256: ${hashSha256Out.textContent}`;
+            navigator.clipboard.writeText(combined).then(() => {
+                showToast('All hashes copied to clipboard!');
+            });
+        });
+
+        // --- 4. Base64 Encoder/Decoder Logic ---
+        const b64Mode = document.getElementById('b64-mode');
+        const b64Input = document.getElementById('b64-input');
+        const b64Output = document.getElementById('b64-output');
+
+        function processBase64() {
+            const val = b64Input.value;
+            try {
+                if (b64Mode.value === 'encode') {
+                    b64Output.textContent = btoa(unescape(encodeURIComponent(val)));
+                } else {
+                    b64Output.textContent = decodeURIComponent(escape(atob(val)));
+                }
+            } catch(e) {
+                b64Output.textContent = 'Error: Invalid input format for selected mode.';
+            }
+        }
+
+        [b64Mode, b64Input].forEach(el => {
+            el.addEventListener('input', processBase64);
+            el.addEventListener('change', processBase64);
+        });
+
+        document.getElementById('b64-copy').addEventListener('click', () => {
+            navigator.clipboard.writeText(b64Output.textContent).then(() => {
+                showToast('Output copied to clipboard!');
+            });
+        });
+
+        // --- 5. UUID Generator Logic ---
+        const uuidCount = document.getElementById('uuid-count');
+        const uuidOutput = document.getElementById('uuid-output');
+
+        function generateUUIDs() {
+            const count = parseInt(uuidCount.value) || 1;
+            let results = [];
+            for(let i = 0; i < count; i++) {
+                results.push(crypto.randomUUID());
+            }
+            uuidOutput.textContent = results.join('\n');
+        }
+
+        document.getElementById('uuid-generate-btn').addEventListener('click', generateUUIDs);
+        uuidCount.addEventListener('change', generateUUIDs);
+
+        document.getElementById('uuid-copy').addEventListener('click', () => {
+            navigator.clipboard.writeText(uuidOutput.textContent).then(() => {
+                showToast('UUID(s) copied to clipboard!');
+            });
+        });
+
+        // Helper to trigger active tab on load
+        function triggerActiveTabRender() {
+            const activeTab = document.querySelector('.tab-btn.active').getAttribute('data-target');
+            if (activeTab === 'qr') renderQRCode();
+            if (activeTab === 'barcode') renderBarcode();
+            if (activeTab === 'hash') updateHashes();
+            if (activeTab === 'base64') processBase64();
+            if (activeTab === 'uuid' && uuidOutput.textContent.startsWith('Click')) generateUUIDs();
+        }
+
+        window.onload = function() {
+            renderQRCode();
+            renderBarcode();
+            updateHashes();
+            processBase64();
+            generateUUIDs();
+        };
+    </script>
+</body>
+</html>
